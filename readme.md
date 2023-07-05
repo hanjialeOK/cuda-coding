@@ -39,6 +39,20 @@ Add these in settings.json.
 }
 ```
 
+modify tasks.json.
+
+```c
+"args": [
+    // "-fdiagnostics-color=always",
+    "-g",
+    "${file}",
+    "-o",
+    "${fileDirname}/${fileBasenameNoExtension}",
+    "/opt/tiger/cuda-coding/gemm_basic.cu",
+    "/opt/tiger/cuda-coding/gemm_use_128.cu",
+    "/opt/tiger/cuda-coding/gemm_use_tile.cu",
+```
+
 ### debugging
 
 Install gdb tools
@@ -52,6 +66,6 @@ Open .cu file and press the play button in the top right corner of the editor.
 ## Run
 
 ```c
-nvcc -o test test.cu
+nvcc -o test main.cu gemm_basic.cu gemm_use_128.cu gemm_use_tile.cu
 ./test
 ```
