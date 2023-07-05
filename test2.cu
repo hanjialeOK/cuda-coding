@@ -2,45 +2,18 @@
 #include<cuda.h>
 #include<cuda_runtime.h>
 
+#include<util.cuh>
+
 using namespace std;
 
-const unsigned M = 512;
-const unsigned N = 512;
-const unsigned K = 1024;
-
-template <typename T>
-struct __device_builtin__ Tensor2D {
-    unsigned height;
-    unsigned width;
-    T *const data_ptr;
-    template <typename t>
-    __host__ __device__ Tensor2D(t &&ptr, unsigned h, unsigned w)
-        : data_ptr(reinterpret_cast<T *>(ptr)), height(h), width(w) {}
-    __host__ __device__ T * operator[](unsigned row) const {
-        return &data_ptr[row*width];
-    }
-    __host__ __device__ T & operator()(unsigned row, unsigned col) const {
-        return data_ptr[row*width + col];
-    }
-};
-
-inline __host__ __device__ float4 operator*(float4 a, float b)
-{
-    return make_float4(a.x * b, a.y * b, a.z * b, a.w * b);
-}
-
-inline __host__ __device__ void operator+=(float4 &a, float4 b)
-{
-    a.x += b.x;
-    a.y += b.y;
-    a.z += b.z;
-    a.w += b.w;
-}
+const unsigned M = 1024;
+const unsigned N = 1024;
+const unsigned K = 2048;
 
 void init(float *A, int w, int h, int val=1) {
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
-            A[i*w+j] = rand() % 10;
+            A[i*w+j] = rand() % 5;
         }
     }
 }
@@ -54,7 +27,7 @@ void show(float *A, int w, int h, int size=10) {
     }
 }
 
-__global__ void MatMulKernel1(const float *__restrict__ A,
+__global__ void gemmKernel_basic(const float *__restrict__ A,
                              const float *__restrict__ B,
                              float *__restrict__ C,
                              unsigned M, unsigned N, unsigned K) {
@@ -73,7 +46,7 @@ __global__ void MatMulKernel1(const float *__restrict__ A,
     tensorC[r][c] = sum;
 }
 
-__global__ void MatMulKernel(const float *__restrict__ A,
+__global__ void gemmKernel_float4(const float *__restrict__ A,
                              const float *__restrict__ B,
                              float *__restrict__ C,
                              unsigned M, unsigned N, unsigned K) {
@@ -99,7 +72,7 @@ __global__ void MatMulKernel(const float *__restrict__ A,
     }
 }
 
-__global__ void MatMulKernel3(const float *__restrict__ A,
+__global__ void gemmKernel_tile(const float *__restrict__ A,
                              const float *__restrict__ B,
                              float *__restrict__ C,
                              unsigned M, unsigned N, unsigned K) {
@@ -137,7 +110,7 @@ __global__ void MatMulKernel3(const float *__restrict__ A,
     }
 }
 
-void MatMul(const float *__restrict__ A, const float *__restrict__ B, float *__restrict__ C,
+void matMul(const float *__restrict__ A, const float *__restrict__ B, float *__restrict__ C,
             unsigned M, unsigned N, unsigned K) {
     // Device malloc
     float *d_x, *d_y, *d_z;
@@ -152,7 +125,7 @@ void MatMul(const float *__restrict__ A, const float *__restrict__ B, float *__r
     // invoke
     dim3 dimBlock(16, 16);
     dim3 dimGrid((N/8-1) / dimBlock.x + 1, (M/8-1) / dimBlock.y + 1);
-    MatMulKernel3<<<dimGrid, dimBlock>>>(d_x, d_y, d_z, M, N, K);
+    gemmKernel3<<<dimGrid, dimBlock>>>(d_x, d_y, d_z, M, N, K);
 
     // Device to host
     cudaMemcpy(C, d_z, M*N*sizeof(float), cudaMemcpyDeviceToHost);
@@ -163,34 +136,48 @@ void MatMul(const float *__restrict__ A, const float *__restrict__ B, float *__r
     cudaFree(d_z);
 }
 
-float nativeMatMul(float A[M][K], float B[K][N], float C[M][N]) {
+float nativeMatMul(float *A, float *B, float *C) {
     float diff = 0.0;
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
             float sum = 0.0;
             for (int k = 0; k < K; k++) {
-                sum += A[i][k] * B[k][j];
+                sum += A[i*K+k] * B[k*N+j];
             }
-            diff = abs(C[i][j] - sum);
+            diff += abs(C[i*N+j] - sum);
         }
     }
     return diff;
 }
 
 int main() {
+    // Get basic info
+    int dev = 0;
+    cudaDeviceProp devProp;
+    cudaGetDeviceProperties(&devProp, dev);
+    cout << "使用GPU device " << dev << ": " << devProp.name << endl;
+    cout << "SM的数量：" << devProp.multiProcessorCount << endl;
+    cout << "每个线程块的共享内存大小：" << devProp.sharedMemPerBlock / 1024.0 << " KB" << endl;
+    cout << "每个线程块的最大线程数：" << devProp.maxThreadsPerBlock << endl;
+    cout << "每个EM的最大线程数：" << devProp.maxThreadsPerMultiProcessor << endl;
+    cout << "每个SM的最大线程束数：" << devProp.maxThreadsPerMultiProcessor / 32 << endl;
+
     cudaEvent_t startEvent, stopEvent;
     cudaEventCreate(&startEvent);
     cudaEventCreate(&stopEvent);
 
-    float A[M][K], B[K][N], C[M][N];
+    float *A, *B, *C;
+    A = (float*)malloc(M*K*sizeof(float));
+    B = (float*)malloc(K*N*sizeof(float));
+    C = (float*)malloc(M*N*sizeof(float));
     srand(time(0));
-    init(&A[0][0], M, K, 1);
-    init(&B[0][0], K, N, 2);
+    init(A, M, K, 1);
+    init(B, K, N, 2);
     cout << "init C:" << endl;
-    show(&C[0][0], M, N);
+    show(C, M, N);
 
     cudaEventRecord(startEvent);
-    MatMul(&A[0][0], &B[0][0], &C[0][0], M, N, K);
+    matMul(A, B, C, M, N, K);
     cudaEventRecord(stopEvent);
 
     cudaEventSynchronize(stopEvent);
@@ -201,10 +188,14 @@ int main() {
     cudaEventDestroy(startEvent);
 
     cout << "output C:" << endl;
-    show(&C[0][0], M, N);
+    show(C, M, N);
 
     float diff = nativeMatMul(A, B, C);
     cout << "total err: " << diff << endl;
 
     printf("Average Time: %.3f ms\n", milliseconds);
+
+    free(A);
+    free(B);
+    free(C);
 }

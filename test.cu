@@ -5,7 +5,7 @@
 
 using namespace std;
 
-const int N = 128;
+const int N = 512;
 
 struct Matrix {
     int width;
