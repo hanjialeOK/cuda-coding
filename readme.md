@@ -28,7 +28,7 @@ change `compilerPath` in c_cpp_properties.json.
 "compilerPath": "/usr/local/cuda/bin/nvcc",
 ```
 
-Add these in settings.json.
+[deprecated] Add these in settings.json.
 
 ```c
 {
@@ -48,9 +48,10 @@ modify tasks.json.
     "${file}",
     "-o",
     "${fileDirname}/${fileBasenameNoExtension}",
-    "/opt/tiger/cuda-coding/gemm_basic.cu",
-    "/opt/tiger/cuda-coding/gemm_use_128.cu",
-    "/opt/tiger/cuda-coding/gemm_use_tile.cu",
+    "${fileDirname}/gemm_basic.cu",
+    "${fileDirname}/gemm_use_128.cu",
+    "${fileDirname}/gemm_use_tile.cu",
+    "${fileDirname}/gemm_use_128_openmlsys.cu",
 ```
 
 ### debugging
@@ -66,6 +67,6 @@ Open .cu file and press the play button in the top right corner of the editor.
 ## Run
 
 ```c
-nvcc -o test main.cu gemm_basic.cu gemm_use_128.cu gemm_use_tile.cu
+nvcc -o test main.cu gemm_basic.cu gemm_use_128.cu gemm_use_tile.cu gemm_use_128_openmlsys.cu
 ./test
 ```
