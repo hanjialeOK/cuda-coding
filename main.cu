@@ -3,13 +3,11 @@
 #include<cuda.h>
 #include<cuda_runtime.h>
 
-#include "util.cuh"
-
 using namespace std;
 
-const unsigned M = 128;
-const unsigned N = 128;
-const unsigned K = 128;
+const unsigned M = 2048;
+const unsigned N = 2048;
+const unsigned K = 2048;
 
 void gemmBasic(const float *__restrict__ A, const float *__restrict__ B, float *__restrict__ C,
             unsigned M, unsigned N, unsigned K);
@@ -109,22 +107,17 @@ int main() {
     cout << "init C:" << endl;
     show(C, M, N);
 
-    cout << "computing ANS:" << endl;
+    cout << "computing ANS..." << endl;
     computeANS(A, B, ANS);
     cout << "ANS done:" << endl;
+    show(ANS, M, N);
 
     vector<float> duration;
     vector<float> diff;
 
     evaluate(A, B, C, ANS, "basic");
-    cout << "basic output C:" << endl;
-    show(C, M, N);
     evaluate(A, B, C, ANS, "use_128");
-    cout << "use_128 output C:" << endl;
-    show(C, M, N);
     evaluate(A, B, C, ANS, "use_tile");
-    cout << "use_tile output C:" << endl;
-    show(C, M, N);
 
     free(A);
     free(B);

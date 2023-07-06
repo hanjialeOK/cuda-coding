@@ -1,6 +1,3 @@
-#include<cuda.h>
-#include<cuda_runtime.h>
-
 #include "util.cuh"
 
 namespace {
@@ -17,7 +14,7 @@ __global__ void gemmKernel(const float *__restrict__ A,
     Tensor2D<const float> tensorA = Tensor2D<const float>(A, M, K);
     Tensor2D<const float4> tensorB = Tensor2D<const float4>(B, K, N/kCount);
     Tensor2D<float4> tensorC = Tensor2D<float4>(C, M, N/kCount);
-    float4 sum[2][2][kCount];
+    float4 sum[2][2][kCount] = {0};
 
     for (unsigned k = 0; k < K; k++) {
         for (unsigned iterA = 0; iterA < 2; iterA++) {
