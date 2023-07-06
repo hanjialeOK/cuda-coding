@@ -16,6 +16,9 @@ void gemmUse128(const float *__restrict__ A, const float *__restrict__ B, float 
 void gemmUseTile(const float *__restrict__ A, const float *__restrict__ B, float *__restrict__ C,
             unsigned M, unsigned N, unsigned K);
 
+void gemmUse128Openmlsys(const float *__restrict__ A, const float *__restrict__ B, float *__restrict__ C,
+            unsigned M, unsigned N, unsigned K);
+
 void init(float *A, int w, int h, int val=1) {
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
@@ -67,6 +70,8 @@ void evaluate(const float *A, const float *B, float *C, const float *ANS, string
         gemmUse128(A, B, C, M, N, K);
     } else if (algo == "use_tile") {
         gemmUseTile(A, B, C, M, N, K);
+    } else if (algo == "use_128_openmlsys") {
+        gemmUse128Openmlsys(A, B, C, M, N, K);
     } else {
         cout << "Unkonwn algo!" << endl;
     }
@@ -112,11 +117,9 @@ int main() {
     cout << "ANS done:" << endl;
     show(ANS, M, N);
 
-    vector<float> duration;
-    vector<float> diff;
-
     evaluate(A, B, C, ANS, "basic");
     evaluate(A, B, C, ANS, "use_128");
+    evaluate(A, B, C, ANS, "use_128_openmlsys");
     evaluate(A, B, C, ANS, "use_tile");
 
     free(A);
