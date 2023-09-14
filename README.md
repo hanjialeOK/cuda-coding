@@ -1,6 +1,6 @@
 # CUDA-coding
 
-## Intro
+## Introduction
 
 学习cuda的一些指南
 
@@ -26,17 +26,6 @@ vscode配置，快捷键 `ctrl+shift+p` 然后输入 `config` 来编辑 json 文
 "compilerPath": "/usr/local/cuda/bin/nvcc",
 ```
 
-[deprecated] Add these in settings.json.
-
-```c
-{
-    "files.associations": {
-        "*.cu": "cpp",
-        "*.cuh": "cpp",
-    }
-}
-```
-
 增加并修改 tasks.json.
 
 ```c
@@ -60,7 +49,21 @@ vscode配置，快捷键 `ctrl+shift+p` 然后输入 `config` 来编辑 json 文
 apt install build-essential gdb
 ```
 
+vscode 安装 `Nsight Visual Studio Code Edition` 和 `C/C++` 插件
+
 ## Debug
+
+```c
+nvcc -g -G -o test main.cu gemm_basic.cu gemm_use_128.cu gemm_use_tile.cu gemm_use_128_openmlsys.cu
+```
+
+或者
+
+```c
+make DEBUG=1 NVCC_GENCODE="-gencode=arch=compute_80,code=sm_80"
+```
+
+## Run
 
 ```c
 nvcc -o test main.cu gemm_basic.cu gemm_use_128.cu gemm_use_tile.cu gemm_use_128_openmlsys.cu
@@ -70,5 +73,5 @@ nvcc -o test main.cu gemm_basic.cu gemm_use_128.cu gemm_use_tile.cu gemm_use_128
 或者
 
 ```c
-make DEBUG=1 NVCC_GENCODE="-gencode=arch=compute_80,code=sm_80"
+make NVCC_GENCODE="-gencode=arch=compute_80,code=sm_80"
 ```

@@ -5,9 +5,9 @@
 
 using namespace std;
 
-const unsigned M = 2048;
-const unsigned N = 2048;
-const unsigned K = 2048;
+const unsigned M = 128;
+const unsigned N = 128;
+const unsigned K = 128;
 
 void gemmBasic(const float *__restrict__ A, const float *__restrict__ B, float *__restrict__ C,
             unsigned M, unsigned N, unsigned K);

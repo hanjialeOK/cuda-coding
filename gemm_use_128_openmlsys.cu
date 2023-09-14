@@ -68,6 +68,9 @@ void gemmUse128Openmlsys(const float *__restrict__ A, const float *__restrict__ 
   gemmKernel<<<grid, block>>>(d_x, d_y, d_z, alpha, beta,
                               M, N, K);
 
+  // Wait for GPU to finish before accessing on host
+  cudaDeviceSynchronize();
+
   // Device to host
   cudaMemcpy(C, d_z, M*N*sizeof(float), cudaMemcpyDeviceToHost);
 
