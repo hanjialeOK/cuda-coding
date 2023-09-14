@@ -55,12 +55,14 @@ vscode 安装 `Nsight Visual Studio Code Edition` 和 `C/C++` 插件
 
 ```c
 nvcc -g -G -o test main.cu gemm_basic.cu gemm_use_128.cu gemm_use_tile.cu gemm_use_128_openmlsys.cu
+// 或者
+make DEBUG=1 NVCC_GENCODE="-gencode=arch=compute_80,code=sm_80"
 ```
 
-或者
+执行cuda-gdb
 
 ```c
-make DEBUG=1 NVCC_GENCODE="-gencode=arch=compute_80,code=sm_80"
+cuda-gdb test
 ```
 
 ## Run
